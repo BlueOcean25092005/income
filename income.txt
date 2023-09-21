@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income and Expenses Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #3498db;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 300px;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        #transactions {
+            margin-top: 20px;
+        }
+
+        #transactions table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #transactions th, #transactions td {
+            padding: 20px;
+            border-bottom: 2px solid #000000;
+            text-align: center;
+            color: #333;
+        }
+
+        .income {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .expense {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .total {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Place the "Search by Date" and "Search by Category" elements in the same line */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-container input[type="date"],
+        .search-container select,
+        .search-container button {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Income and Expenses Tracker</h1>
+    </header>
+    <div class="container">
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" placeholder="Enter a description">
+        </div>
+        <div class="form-group">
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" placeholder="Enter amount">
+        </div>
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <select id="category">
+                <option value="General">General</option>
+                <option value="Food">Food</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+        </div>
+       <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" id="date">
+        </div>
+        <div class="search-container">
+            <label for="searchDate">Search by Date:</label>
+            <input type="date" id="searchDate">
+            <label for="searchCategory">Search by Category:</label>
+            <select id="searchCategory">
+                <option value="">All</option>
+                <option value="General">General</option>
+                <option value="Food">Food</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Other">Other</option>
+            </select>
+            <button id="searchButton">Search</button>
+        </div>
+        <button id="addTransaction">Add Transaction</button>
+        <div id="transactions">
+            <h2>Transactions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Income</th>
+                        <th>Expense</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Transaction rows will be added dynamically here -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total:</strong></td>
+                        <td id="totalIncome">0</td>
+                        <td id="totalExpense">0</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net:</strong></td>
+                        <td id="netAmount" colspan="3">0</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <script>
+const addButton = document.getElementById("addTransaction");
+        const descriptionInput = document.getElementById("description");
+        const amountInput = document.getElementById("amount");
+        const categorySelect = document.getElementById("category");
+        const typeSelect = document.getElementById("type");
+        const dateInput = document.getElementById("date");
+        const transactionTableBody = document.querySelector("#transactions tbody");
+        const totalIncomeCell = document.getElementById("totalIncome");
+        const totalExpenseCell = document.getElementById("totalExpense");
+        const netAmountCell = document.getElementById("netAmount");
+        const searchDateInput = document.getElementById("searchDate");
+        const searchCategoryInput = document.getElementById("searchCategory");
+        const searchButton = document.getElementById("searchButton");
+
+        let transactions = [];
+        let dateChangedManually = false; // Flag to track manual date changes
+
+        // Function to set the date input value to the current date
+        function setCurrentDate() {
+            const currentDate = new Date();
+            const currentDateString = currentDate.toISOString().split('T')[0];
+            dateInput.value = currentDateString;
+        }
+
+        // Call the function to set the date input to the current date initially
+        setCurrentDate();
+
+        // When the date input is manually changed, set the flag to true
+        dateInput.addEventListener("change", () => {
+            dateChangedManually = true;
+        });
+
+        addButton.addEventListener("click", () => {
+            const description = descriptionInput.value;
+            const amount = parseFloat(amountInput.value);
+            const category = categorySelect.value;
+            const type = typeSelect.value;
+            const dateValue = dateInput.value; // Get the raw date input
+
+            if (description.trim() === "" || isNaN(amount)) {
+                alert("Please enter a valid description and amount.");
+                return;
+            }
+
+            // Format the date as "dd-mm-yyyy"
+            const dateParts = dateValue.split("-");
+            const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+
+            const transaction = {
+                description,
+                amount,
+                category,
+                type,
+                date: formattedDate, // Use the formatted date
+            };
+
+            transactions.push(transaction);
+
+            // Sort transactions in descending order of date
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            updateTransactionTable(transactions);
+            descriptionInput.value = "";
+            amountInput.value = "";
+
+            // Reset the date input to the current date only if it hasn't been manually changed
+            if (!dateChangedManually) {
+                setCurrentDate();
+            }
+
+            // Reset the manual date change flag
+            dateChangedManually = false;
+        });
+
+       // Populate the search category dropdown with options from the input category dropdown
+categorySelect.addEventListener("change", () => {
+    const selectedCategory = categorySelect.value;
+    searchCategoryInput.innerHTML = "";
+
+    // Create an "All" option in the search category dropdown
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "All";
+    searchCategoryInput.appendChild(allOption);
+
+    // If a category is selected in the input dropdown, add it to the search dropdown
+    if (selectedCategory !== "") {
+        const option = document.createElement("option");
+        option.value = selectedCategory;
+        option.textContent = selectedCategory;
+        searchCategoryInput.appendChild(option);
+    }
+});
+        searchButton.addEventListener("click", () => {
+            const searchDate = searchDateInput.value;
+            const formattedSearchDate = searchDate.split('-').reverse().join('-'); // Format search date as "dd-mm-yyyy"
+            const searchCategory = searchCategoryInput.value.toLowerCase(); // Convert to lowercase for case-insensitive search
+
+            const filteredTransactions = transactions.filter((transaction) => {
+                const transactionDate = transaction.date;
+                const transactionCategory = transaction.category.toLowerCase();
+
+                return (
+                    (searchDate === "" || transactionDate === formattedSearchDate) &&
+                    (searchCategory === "" || transactionCategory.includes(searchCategory))
+                );
+            });
+
+            updateTransactionTable(filteredTransactions);
+        });
+
+        function updateTransactionTable(transactions) {
+            // Update the table with sorted transactions
+            transactionTableBody.innerHTML = "";
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            transactions.forEach((transaction) => {
+                const row = transactionTableBody.insertRow(0);
+                const descriptionCell = row.insertCell(0);
+                const incomeCell = row.insertCell(1);
+                const expenseCell = row.insertCell(2);
+                const categoryCell = row.insertCell(3);
+                const dateCell = row.insertCell(4);
+
+                descriptionCell.textContent = transaction.description;
+                if (transaction.type === "income") {
+                    incomeCell.textContent = `${transaction.amount.toFixed(2)}`;
+                    expenseCell.textContent = "";
+                    totalIncome += transaction.amount;
+                } else {
+                    incomeCell.textContent = "";
+                    expenseCell.textContent = `${Math.abs(transaction.amount).toFixed(2)}`;
+                    totalExpense += Math.abs(transaction.amount);
+                }
+                categoryCell.textContent = transaction.category; // Display category
+                // Format the date as "dd-mm-yyyy" before displaying it
+                dateCell.textContent = transaction.date;
+            });
+
+            const netAmount = totalIncome - totalExpense;
+            totalIncomeCell.textContent = totalIncome.toFixed(2);
+            totalExpenseCell.textContent = totalExpense.toFixed(2);
+            netAmountCell.textContent = netAmount.toFixed(2);
+        }
+    </script>
+</body>
+</html>
