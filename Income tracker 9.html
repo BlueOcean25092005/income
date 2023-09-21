@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income and Expenses Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #3498db;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            color: #333;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        #transactions {
+            margin-top: 20px;
+        }
+
+        #transactions table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #transactions th, #transactions td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+            color: #333;
+        }
+
+        .income {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .expense {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .total {
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Income and Expenses Tracker</h1>
+    </header>
+    <div class="container">
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" placeholder="Enter a description">
+        </div>
+        <div class="form-group">
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" placeholder="Enter amount">
+        </div>
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" id="date">
+        </div>
+        <div class="form-group">
+            <label for="currency">Currency:</label>
+            <select id="currency">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="INR">INR</option>
+                <!-- Add more currency options as needed -->
+            </select>
+        </div>
+
+        <button id="addTransaction">Add Transaction</button>
+        <div class="form-group">
+            <label for="searchDate">Search by Date:</label>
+            <input type="date" id="searchDate">
+            <button id="searchButton">Search</button>
+        </div>
+        <div id="transactions">
+            <h2>Transactions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Income</th>
+                        <th>Expense</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Transaction rows will be added dynamically here -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total:</strong></td>
+                        <td id="totalIncome">0</td>
+                        <td id="totalExpense">0</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net:</strong></td>
+                        <td id="netAmount" colspan="2">0</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <script>
+        const addButton = document.getElementById("addTransaction");
+        const descriptionInput = document.getElementById("description");
+        const amountInput = document.getElementById("amount");
+        const typeSelect = document.getElementById("type");
+        const dateInput = document.getElementById("date");
+        const currencySelect = document.getElementById("currency");
+        const transactionTableBody = document.querySelector("#transactions tbody");
+        const totalIncomeCell = document.getElementById("totalIncome");
+        const totalExpenseCell = document.getElementById("totalExpense");
+        const netAmountCell = document.getElementById("netAmount");
+        const searchDateInput = document.getElementById("searchDate");
+        const searchButton = document.getElementById("searchButton");
+
+        let transactions = [];
+
+        addButton.addEventListener("click", () => {
+            const description = descriptionInput.value;
+            const amount = parseFloat(amountInput.value);
+            const type = typeSelect.value;
+            const date = dateInput.value;
+            const currency = currencySelect.value;
+
+            if (description.trim() === "" || isNaN(amount)) {
+                alert("Please enter a valid description and amount.");
+                return;
+            }
+
+            const transaction = {
+                description,
+                amount,
+                type,
+                date,
+            };
+
+            transactions.push(transaction);
+
+            updateTransactionTable(transactions);
+            descriptionInput.value = "";
+            amountInput.value = "";
+            dateInput.value = "";
+        });
+
+        searchButton.addEventListener("click", () => {
+            const searchDate = searchDateInput.value;
+            const filteredTransactions = transactions.filter(
+                (transaction) => transaction.date === searchDate
+            );
+
+            updateTransactionTable(filteredTransactions);
+        });
+
+        function updateTransactionTable(transactions) {
+            // Get the selected currency
+            const currency = currencySelect.value;
+
+            // Update the table with sorted transactions
+            transactionTableBody.innerHTML = "";
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            transactions.forEach((transaction) => {
+                const row = transactionTableBody.insertRow(0);
+                const descriptionCell = row.insertCell(0);
+                const incomeCell = row.insertCell(1);
+                const expenseCell = row.insertCell(2);
+                const dateCell = row.insertCell(3);
+
+                descriptionCell.textContent = transaction.description;
+                if (transaction.type === "income") {
+                    incomeCell.textContent = `${currency} ${transaction.amount.toFixed(2)}`;
+                    expenseCell.textContent = "";
+                    totalIncome += transaction.amount;
+                } else {
+                    incomeCell.textContent = "";
+                    expenseCell.textContent = `${currency} ${Math.abs(transaction.amount).toFixed(2)}`;
+                    totalExpense += Math.abs(transaction.amount);
+                }
+                dateCell.textContent = transaction.date;
+            });
+
+            const netAmount = totalIncome - totalExpense;
+            totalIncomeCell.textContent = `${currency} ${totalIncome.toFixed(2)}`;
+            totalExpenseCell.textContent = `${currency} ${totalExpense.toFixed(2)}`;
+            netAmountCell.textContent = `${currency} ${netAmount.toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>
